@@ -1,0 +1,38 @@
+[
+  {
+    "id": "t_32909a56",
+    "title": "YT Queue Watcher",
+    "body": "Polls #1492901735629324418 every 2 min for new YouTube links and enqueues them to the processing queue.\\n\\nQueue file: ~/.hermes/cache/yt_link_queue.json\\nProcessed log: ~/.hermes/cache/processed_yt_urls.txt",
+    "assignee": "ops",
+    "status": "ready",
+    "priority": 0,
+    "tenant": null,
+    "workspace_kind": "scratch",
+    "workspace_path": null,
+    "created_by": "user",
+    "created_at": 1778349038,
+    "started_at": null,
+    "completed_at": null,
+    "result": null,
+    "skills": [],
+    "max_retries": null
+  },
+  {
+    "id": "t_de29da10",
+    "title": "YT Queue Worker",
+    "body": "Processes ONE YouTube link from the queue every 5 min via NotebookLM pipeline.\\n\\nHandles 429/500 with exponential backoff (1m → 5m → 15m).\\nMax 3 retries before marking failed.\\n\\nSaves results to: Research/Insights/ in Obsidian vault.",
+    "assignee": "ops",
+    "status": "ready",
+    "priority": 0,
+    "tenant": null,
+    "workspace_kind": "scratch",
+    "workspace_path": null,
+    "created_by": "user",
+    "created_at": 1778349045,
+    "started_at": null,
+    "completed_at": null,
+    "result": null,
+    "skills": [],
+    "max_retries": null
+  }
+]
