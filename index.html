@@ -3,159 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hermes Kanban Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Hermes Kanban</title>
     <style>
-        .kanban-column { min-height: 200px; }
-        .card { transition: transform 0.1s ease-in-out; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0f172a; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; padding: 16px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 24px; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .title { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #60a5fa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .reload-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; font-size: 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+        .reload-btn:hover { background: #334155; }
+        .last-updated { font-size: 11px; color: #94a3b8; font-style: italic; }
+        .error-banner { display: none; margin-bottom: 16px; padding: 12px; background: rgba(127,29,29,0.5); border: 1px solid #dc2626; color: #fca5a5; font-size: 13px; border-radius: 8px; }
+        .error-banner.visible { display: block; }
+        .board { display: flex; flex-direction: row; gap: 16px; overflow-x: auto; padding-bottom: 16px; align-items: flex-start; }
+        .column { flex-shrink: 0; width: 280px; background: rgba(30,41,59,0.5); border-radius: 12px; padding: 12px; border: 1px solid rgba(51,65,85,0.5); }
+        .col-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+        .col-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
+        .col-count { font-size: 11px; background: #334155; color: #cbd5e1; padding: 2px 8px; border-radius: 9999px; }
+        .task-list { display: flex; flex-direction: column; gap: 12px; min-height: 80px; }
+        .card { background: #1e293b; border: 1px solid #334155; padding: 14px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.1s, border-color 0.2s; }
+        .card:hover { border-color: #3b82f6; }
         .card:active { transform: scale(0.98); }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .priority-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
+        .p0 { background: #475569; } .p1 { background: #3b82f6; } .p2 { background: #f97316; } .p3 { background: #dc2626; }
+        .assignee { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .card-title { font-size: 13px; font-weight: 500; color: #f1f5f9; line-height: 1.4; margin-bottom: 6px; }
+        .card-body { font-size: 11px; color: #94a3b8; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+        .card-footer { margin-top: 10px; padding-top: 8px; border-top: 1px solid #334155; display: flex; justify-content: flex-end; font-size: 10px; color: #64748b; }
+        .init-msg { width: 100%; text-align: center; padding: 80px 0; color: #64748b; font-size: 14px; }
+        .dot { display: inline-block; animation: blink 1.4s infinite both; }
+        .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
-
-    <div class="max-w-7xl mx-auto p-4">
-        <header class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-            <div class="flex items-center gap-4">
-                <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                    Hermes Kanban
-                </h1>
-                <button onclick="fetchKanbanData()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-600 transition-colors">
-                    ↻ Reload
-                </button>
-            </div>
-            <div id="last-updated" class="text-xs text-slate-400 italic">
-                Loading...
-            </div>
-        </header>
-
-        <div id="error-banner" class="hidden mb-4 p-3 bg-red-900/50 border border-red-500 text-red-200 text-sm rounded-lg"></div>
-
-        <div id="kanban-board" class="flex flex-row overflow-x-auto gap-4 pb-4 items-start">
-            <div class="w-full text-center py-20 text-slate-500 animate-pulse">Initializing board...</div>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <span class="title">Hermes Kanban</span>
+            <button class="reload-btn" onclick="fetchKanbanData()">&#8635; Reload</button>
         </div>
+        <span id="last-updated" class="last-updated">Loading...</span>
+    </header>
+    <div id="error-banner" class="error-banner"></div>
+    <div id="kanban-board" class="board">
+        <div class="init-msg">Initializing<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
     </div>
 
-    <script>
-        const DATA_URL = 'kanban_data.json';
-        const REFRESH_INTERVAL = 300000; // 5 minutes
+<script>
+var DATA_URL = 'kanban_data.json';
+var REFRESH_INTERVAL = 300000;
 
-        async function fetchKanbanData() {
-            const banner = document.getElementById('error-banner');
-            const board = document.getElementById('kanban-board');
-            const lastUpdated = document.getElementById('last-updated');
-            
-            banner.classList.add('hidden');
-            lastUpdated.innerText = 'Fetching...';
-
-            try {
-                const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                
-                if (!Array.isArray(data)) throw new Error('Data is not an array');
-
-                renderBoard(data);
-                lastUpdated.innerText = 'Last updated: ' + new Date().toLocaleTimeString();
-            } catch (error) {
-                console.error('Error:', error);
-                banner.innerText = `Error: ${error.message}`;
-                banner.classList.remove('hidden');
-                lastUpdated.innerText = 'Update failed';
-                
-                if (board.innerHTML.includes('Initializing board...')) {
-                    board.innerHTML = `
-                        <div class="w-full text-center py-20 text-red-400">
-                            <p class="text-lg font-bold">Failed to load data</p>
-                            <p class="text-sm opacity-70">${error.message}</p>
-                            <p class="text-xs mt-4 text-slate-500">Check your internet or the error banner above.</p>
-                        </div>
-                    `;
-                }
+function fetchKanbanData() {
+    var banner = document.getElementById('error-banner');
+    var board = document.getElementById('kanban-board');
+    var lu = document.getElementById('last-updated');
+    banner.className = 'error-banner';
+    lu.textContent = 'Fetching...';
+    fetch(DATA_URL + '?t=' + new Date().getTime())
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(data) {
+            if (!Array.isArray(data)) throw new Error('Not an array');
+            renderBoard(data);
+            lu.textContent = 'Updated: ' + new Date().toLocaleTimeString();
+        })
+        .catch(function(err) {
+            console.error(err);
+            banner.textContent = 'Error: ' + err.message;
+            banner.className = 'error-banner visible';
+            lu.textContent = 'Update failed';
+            if (board.querySelector('.init-msg')) {
+                board.innerHTML = '<div class="init-msg" style="color:#fca5a5">Load failed: ' + err.message + '</div>';
             }
-        }
+        });
+}
 
-        function renderBoard(tasks) {
-            const board = document.getElementById('kanban-board');
-            board.innerHTML = '';
+function renderBoard(tasks) {
+    var board = document.getElementById('kanban-board');
+    board.innerHTML = '';
+    var cols = {};
+    tasks.forEach(function(t) {
+        var s = t.status || 'unknown';
+        if (!cols[s]) cols[s] = [];
+        cols[s].push(t);
+    });
+    var order = { 'ready': 1, 'in_progress': 2, 'completed': 3 };
+    var statuses = Object.keys(cols).sort(function(a, b) { return (order[a]||99) - (order[b]||99); });
+    if (statuses.length === 0) {
+        board.innerHTML = '<div class="init-msg">No tasks found.</div>'; return;
+    }
+    statuses.forEach(function(status) {
+        var col = document.createElement('div');
+        col.className = 'column';
+        var hdr = document.createElement('div');
+        hdr.className = 'col-header';
+        var t = document.createElement('h2');
+        t.className = 'col-title';
+        t.textContent = status;
+        var cnt = document.createElement('span');
+        cnt.className = 'col-count';
+        cnt.textContent = cols[status].length;
+        hdr.appendChild(t); hdr.appendChild(cnt); col.appendChild(hdr);
+        var list = document.createElement('div');
+        list.className = 'task-list';
+        cols[status].forEach(function(task) {
+            var card = document.createElement('div');
+            card.className = 'card';
+            var pColors = ['p0','p1','p2','p3'];
+            var pClass = 'p0';
+            if (task.priority >= 0 && task.priority <= 3) pClass = pColors[task.priority];
+            card.innerHTML =
+                '<div class="card-top">' +
+                    '<div class="priority-dot ' + pClass + '"></div>' +
+                    '<span class="assignee">' + (task.assignee || 'unassigned') + '</span>' +
+                '</div>' +
+                '<div class="card-title">' + esc(task.title) + '</div>' +
+                (task.body ? '<div class="card-body">' + esc(task.body) + '</div>' : '') +
+                '<div class="card-footer">' + new Date(task.created_at * 1000).toLocaleDateString() + '</div>';
+            card.onclick = function() { alert('Task: ' + task.title + '\n\n' + (task.body || 'No description')); };
+            list.appendChild(card);
+        });
+        col.appendChild(list); board.appendChild(col);
+    });
+}
 
-            // 1. Group tasks by status
-            const columns = {};
-            tasks.forEach(task => {
-                const status = task.status || 'unknown';
-                if (!columns[status]) columns[status] = [];
-                columns[status].push(task);
-            });
+function esc(s) {
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
 
-            // 2. Sort statuses (optional: define a specific order)
-            const sortedStatuses = Object.keys(columns).sort((a, b) => {
-                const order = { 'ready': 1, 'in_progress': 2, 'completed': 3 };
-                return (order[a] || 99) - (order[b] || 99);
-            });
-
-            if (sortedStatuses.length === 0) {
-                board.innerHTML = '<div class="w-full text-center py-20 text-slate-500 italic">No tasks found.</div>';
-                return;
-            }
-
-            // 3. Create columns
-            sortedStatuses.forEach(status => {
-                const colDiv = document.createElement('div');
-                colDiv.className = 'flex-shrink-0 w-72 bg-slate-800/50 rounded-lg p-3 flex flex-col border border-slate-700/50';
-                
-                const titleDiv = document.createElement('div');
-                titleDiv.className = 'flex items-center justify-between mb-3 px-1';
-                
-                const title = document.createElement('h2');
-                title.className = 'text-sm font-semibold uppercase tracking-wider text-slate-400';
-                title.innerText = status;
-                
-                const taskCount = document.createElement('span');
-                taskCount.className = 'text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full';
-                taskCount.innerText = columns[status].length;
-                
-                titleDiv.appendChild(title);
-                titleDiv.appendChild(taskCount);
-                colDiv.appendChild(titleDiv);
-
-                const taskList = document.createElement('div');
-                taskList.className = 'kanban-column space-y-3';
-
-                columns[status].forEach(task => {
-                    const card = document.createElement('div');
-                    card.className = 'card bg-slate-800 border border-slate-700 p-4 rounded-md shadow-lg hover:border-blue-500/50 cursor-pointer';
-                    
-                    // Priority colors
-                    const priorityColors = { 0: 'bg-slate-600', 1: 'bg-blue-600', 2: 'bg-orange-600', 3: 'bg-red-600' };
-                    const pColor = priorityColors[task.priority] || 'bg-slate-600';
-
-                    card.innerHTML = `
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="w-2 h-2 rounded-full ${pColor} mt-1.5"></div>
-                            <div class="text-[10px] text-slate-500 uppercase font-bold">${task.assignee || 'unassigned'}</div>
-                        </div>
-                        <h3 class="text-sm font-medium text-slate-100 leading-tight mb-2">${task.title}</h3>
-                        ${task.body ? `<p class="text-xs text-slate-400 line-clamp-3">${task.body}</p>` : ''}
-                        <div class="mt-3 pt-2 border-t border-slate-700/50 flex justify-end text-[10px] text-slate-500">
-                            ${new Date(task.created_at * 1000).toLocaleDateString()}
-                        </div>
-                    `;
-                    
-                    // Card click for full view (optional)
-                    card.onclick = () => alert(`Task: ${task.title}\n\n${task.body || 'No description'}`);
-
-                    taskList.appendChild(card);
-                });
-
-                colDiv.appendChild(taskList);
-                board.appendChild(colDiv);
-            });
-
-
-        // Initial load
-        fetchKanbanData();
-
-        // Polling
-        setInterval(fetchKanbanData, REFRESH_INTERVAL);
-    </script>
+fetchKanbanData();
+setInterval(fetchKanbanData, REFRESH_INTERVAL);
+</script>
 </body>
 </html>
